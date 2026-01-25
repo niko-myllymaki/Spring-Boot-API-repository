@@ -97,16 +97,22 @@ public class DatabaseConnectionService {
 	}
 	
 	public static UserRecord selectOne(int id) {
+		Connection connection = null;
+		PreparedStatement prepStatement = null;
+		ResultSet resultSet = null;
 		try {
 			UserRecord user = null;
-			Connection connection = connectToDB();
+			connection = connectToDB();
+			
 			//Prepared statements prevent sql injections
-			PreparedStatement prepStatement = connection.prepareStatement("SELECT * FROM USERS WHERE idusers = ?");
+			prepStatement = connection.prepareStatement("SELECT * FROM USERS WHERE idusers = ?");
+			
 			//Set parameterIndex starts at 1 not 0
 			prepStatement.setInt(1, id);
+			
 			//Use execute with unknown statements or when statements produce multiple results
 			//otherwise use executeQuery
-			ResultSet resultSet = prepStatement.executeQuery();
+			resultSet = prepStatement.executeQuery();
 			while(resultSet.next()) {
 				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"), resultSet.getString("password"));
 			}
@@ -115,24 +121,47 @@ public class DatabaseConnectionService {
 			return user;
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			System.out.println("Closing connections...");
+		    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
+		    try { prepStatement.close(); } catch (Exception e) { /* Ignored */ }
+		    try { connection.close(); } catch (Exception e) { /* Ignored */ }
 		}
 		return null;
 	}
 	
 	
 	public static List<UserRecord> selectAll() {
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		
 		try {
-			Connection connection = connectToDB();
+			connection = connectToDB();
+			System.out.println(connection.isClosed());
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery("SELECT * FROM USERS");
 
-			Statement statment = connection.createStatement();
-			ResultSet resultSet = statment.executeQuery("SELECT * FROM USERS");
-			
 			List<UserRecord> allUsers = resultSetToList(resultSet);
 			System.out.println("Selecting all users");
 
 			return allUsers;
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			//TODO: try to get closeConnections() method to work on every CRUD-operation
+			System.out.println("Closing connections...");
+			closeConnections(connection, statement, resultSet);
+//		    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
+//		    try { statement.close(); } catch (Exception e) { /* Ignored */ }
+//		    try { connection.close(); } catch (Exception e) { /* Ignored */ }
+		    
+		    try {
+				System.out.println(resultSet.isClosed());
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return null;
 		
@@ -152,4 +181,9 @@ public class DatabaseConnectionService {
 		return resultList;
 	}
 	
+	private static void closeConnections(Connection connection, Statement statement, ResultSet resultSet) {
+	    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
+	    try { statement.close(); } catch (Exception e) { /* Ignored */ }
+	    try { connection.close(); } catch (Exception e) { /* Ignored */ }
+	}	
 }

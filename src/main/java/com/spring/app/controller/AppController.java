@@ -2,9 +2,14 @@ package com.spring.app.controller;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.app.dto.UserRecord;
@@ -25,31 +30,32 @@ public class AppController {
 	
 	//TODO: Put a default limit of how many users this returns and possibly additional parameters to select a certain amount of users
 	@GetMapping("/users")
-	public List<UserRecord> selectAllUsers() {
+	public List<UserRecord> getAllUsers(@RequestParam(defaultValue = "testvalue") String value) {
+		System.out.println(value);
 		return DatabaseConnectionService.selectAll();
 	}
 	
-	@GetMapping("/user")
-	public UserRecord selectUser(@RequestParam("id") int userId) {
-		return DatabaseConnectionService.selectOne(userId);
+	@GetMapping("/users/{id}")
+	public UserRecord getUserById(@PathVariable int id) {
+		return DatabaseConnectionService.selectOne(id);
 	}
 	
-	@GetMapping("/user/add")
+	@PostMapping("/users")
 	public String addNewUser(@RequestParam("username") String username,
 			@RequestParam("password") String password) {
 		return DatabaseConnectionService.insertNewUser(username, password);
 	}
 	
-	@GetMapping("/user/update")
-	public String updateUser(@RequestParam("id") int userId,
+	@PutMapping("/users/{id}")
+	public String updateUser(@PathVariable int id,
 			@RequestParam(required = false) String username,
 			@RequestParam(required = false) String password) {
-		return DatabaseConnectionService.updateUser(userId, username, password);
+		return DatabaseConnectionService.updateUser(id, username, password);
 	}
 	
-	@GetMapping("/user/delete")
-	public String deleteUser(@RequestParam("id") int userId) {
-		return DatabaseConnectionService.deleteUser(userId);
+	@DeleteMapping("/users/{id}")
+	public String deleteUser(@PathVariable int id) {
+		return DatabaseConnectionService.deleteUser(id);
 	}
 
 }
