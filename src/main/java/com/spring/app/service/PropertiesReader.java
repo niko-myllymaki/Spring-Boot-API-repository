@@ -6,16 +6,24 @@ import java.util.Properties;
 
 public class PropertiesReader {
 	public static Properties readProperties() {
+		FileReader reader = null;
 		try {
-			FileReader reader = new FileReader("src\\main\\resources\\config.properties");
+			reader = new FileReader("src\\main\\resources\\config.properties");
 			
 			Properties dbProperties = new Properties();
 			
 			dbProperties.load(reader);
+			
 	
 			return dbProperties;
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				reader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		return null;

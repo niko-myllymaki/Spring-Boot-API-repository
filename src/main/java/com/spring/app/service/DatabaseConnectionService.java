@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -34,55 +35,62 @@ public class DatabaseConnectionService {
 	}
 	
 	public static String updateUser(int id, String username, String password) {
+		Connection connection = null;
+		PreparedStatement prepStatement = null;
 		try {
-			Connection connection = connectToDB();
-
-			//Statement statment = connection.createStatement();
+			connection = connectToDB();
 			//Prepared statements prevents sql injections
-			PreparedStatement updateUser = connection.prepareStatement("UPDATE USERS "
+			prepStatement = connection.prepareStatement("UPDATE USERS "
 					+ "SET username = COALESCE(?, username), "
 					+ "password = COALESCE(?, password) "
 					+ "WHERE idusers = ?");
 			//SetString parameterIndex starts at 1 not 0
-			updateUser.setString(1, username);
-			updateUser.setString(2, password);
-			updateUser.setInt(3, id);
-			updateUser.executeUpdate();
+			prepStatement.setString(1, username);
+			prepStatement.setString(2, password);
+			prepStatement.setInt(3, id);
+			prepStatement.executeUpdate();
 			
 			return "User updated";
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			releaseResources(connection, prepStatement);
 		}
 		
 		return null;
 	}
 	
 	public static String insertNewUser(String username, String password) {
+		Connection connection = null;
+		PreparedStatement prepStatement = null;
 		try {
-			Connection connection = connectToDB();
+			connection = connectToDB();
 
-			//Statement statment = connection.createStatement();
 			//Prepared statements prevents sql injections
-			PreparedStatement statement = connection.prepareStatement("INSERT INTO USERS (username, password) VALUES (?, ?)");
+			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, password) VALUES (?, ?)");
 			//SetString parameterIndex starts at 1 not 0
-			statement.setString(1, username);
-			statement.setString(2, password);
-			statement.execute();
+			prepStatement.setString(1, username);
+			prepStatement.setString(2, password);
+			prepStatement.execute();
 			
 			return "New User added";
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			releaseResources(connection, prepStatement);
 		}
 		return null;
 	}
 	
 	public static String deleteUser(int id) {
+		Connection connection = null;
+		PreparedStatement prepStatement = null;
+
 		try {
-			Connection connection = connectToDB();
-			//Statement statment = connection.createStatement();
+			connection = connectToDB();
 			//Prepared statements prevents sql injections
-			PreparedStatement prepStatement = connection.prepareStatement("DELETE FROM USERS WHERE idusers = ?");
+			prepStatement = connection.prepareStatement("DELETE FROM USERS WHERE idusers = ?");
 			//SetString parameterIndex starts at 1 not 0
 			prepStatement.setInt(1, id);
 
@@ -92,6 +100,8 @@ public class DatabaseConnectionService {
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			releaseResources(connection, prepStatement);
 		}
 		return null;
 	}
@@ -122,10 +132,7 @@ public class DatabaseConnectionService {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			System.out.println("Closing connections...");
-		    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
-		    try { prepStatement.close(); } catch (Exception e) { /* Ignored */ }
-		    try { connection.close(); } catch (Exception e) { /* Ignored */ }
+			releaseResources(connection, prepStatement, resultSet);
 		}
 		return null;
 	}
@@ -138,7 +145,6 @@ public class DatabaseConnectionService {
 		
 		try {
 			connection = connectToDB();
-			System.out.println(connection.isClosed());
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT * FROM USERS");
 
@@ -149,22 +155,9 @@ public class DatabaseConnectionService {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			//TODO: try to get closeConnections() method to work on every CRUD-operation
-			System.out.println("Closing connections...");
-			closeConnections(connection, statement, resultSet);
-//		    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
-//		    try { statement.close(); } catch (Exception e) { /* Ignored */ }
-//		    try { connection.close(); } catch (Exception e) { /* Ignored */ }
-		    
-		    try {
-				System.out.println(resultSet.isClosed());
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			releaseResources(connection, statement, resultSet);
 		}
 		return null;
-		
 	}
 	
 	//Record class is used as an Data Transfer Object (DTO) because we just need an User class to hold and carry data.
@@ -181,9 +174,19 @@ public class DatabaseConnectionService {
 		return resultList;
 	}
 	
-	private static void closeConnections(Connection connection, Statement statement, ResultSet resultSet) {
-	    try { resultSet.close(); } catch (Exception e) { /* Ignored */ }
-	    try { statement.close(); } catch (Exception e) { /* Ignored */ }
-	    try { connection.close(); } catch (Exception e) { /* Ignored */ }
+	//Handling closing of different types of objects
+	private static void releaseResources(Object... args) {
+		System.out.println("Releasing resources...");
+		for(Object obj: args) {
+			if(obj instanceof Connection) {
+				try { ((Connection)obj).close();} catch (Exception e) {}
+			} 
+			if(obj instanceof Statement) {
+				try { ((Statement)obj).close();} catch (Exception e) {}
+			} 
+			if(obj instanceof ResultSet) {
+				try { ((ResultSet)obj).close();} catch (Exception e) {}
+			} 
+		}
 	}	
 }
