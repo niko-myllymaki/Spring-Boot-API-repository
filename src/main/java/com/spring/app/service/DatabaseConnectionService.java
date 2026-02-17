@@ -34,19 +34,27 @@ public class DatabaseConnectionService {
 		return connection;
 	}
 	
-	public static String updateUser(int id, String username, String password) {
+	public static String updateUser(int id, String newUsername, String newPassword) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
+		String newHashedPassword = "";
+		//TODO: What to do if password is updated?
+		if(newPassword != null) {
+			byte[] newSalt = PasswordHashingService.generateSalt();		
+			newHashedPassword = PasswordHashingService.hashPassword(newPassword, newSalt);
+			//TODO: But what happens to salt???
+		}
 		try {
 			connection = connectToDB();
 			//Prepared statements prevents sql injections
+			//TODO: But what happens to salt???
 			prepStatement = connection.prepareStatement("UPDATE USERS "
 					+ "SET username = COALESCE(?, username), "
-					+ "password = COALESCE(?, password) "
+					+ "passwordHash = COALESCE(?, passwordHash) "
 					+ "WHERE idusers = ?");
 			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setString(1, username);
-			prepStatement.setString(2, password);
+			prepStatement.setString(1, newUsername);
+			prepStatement.setString(2, newHashedPassword);
 			prepStatement.setInt(3, id);
 			prepStatement.executeUpdate();
 			
@@ -61,17 +69,23 @@ public class DatabaseConnectionService {
 		return null;
 	}
 	
+	//TODO: DB has been updated -> Test it with the new Hashing service
 	public static String insertNewUser(String username, String password) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
+		
+		byte[] salt = PasswordHashingService.generateSalt();		
+		String hashedPassword = PasswordHashingService.hashPassword(password, salt);
+		
 		try {
 			connection = connectToDB();
 
 			//Prepared statements prevents sql injections
-			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, password) VALUES (?, ?)");
+			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt) VALUES (?, ?, ?)");
 			//SetString parameterIndex starts at 1 not 0
 			prepStatement.setString(1, username);
-			prepStatement.setString(2, password);
+			prepStatement.setString(2, hashedPassword);
+			prepStatement.setBytes(3, salt);
 			prepStatement.execute();
 			
 			return "New User added";
@@ -115,7 +129,7 @@ public class DatabaseConnectionService {
 			connection = connectToDB();
 			
 			//Prepared statements prevent sql injections
-			prepStatement = connection.prepareStatement("SELECT * FROM USERS WHERE idusers = ?");
+			prepStatement = connection.prepareStatement("SELECT idusers, username FROM USERS WHERE idusers = ?");
 			
 			//Set parameterIndex starts at 1 not 0
 			prepStatement.setInt(1, id);
@@ -123,13 +137,18 @@ public class DatabaseConnectionService {
 			//Use execute with unknown statements or when statements produce multiple results
 			//otherwise use executeQuery
 			resultSet = prepStatement.executeQuery();
+			
+			//TODO: Custom Error Messages and handle exception in REST API
+			if(!resultSet.isBeforeFirst()) {
+				throw new UserNotFoundException("User not found.", new RuntimeException());
+			}
 			while(resultSet.next()) {
-				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"), resultSet.getString("password"));
+				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
 			}
 			System.out.println("User selected: " + user);
 
 			return user;
-		} catch (SQLException e) {
+		} catch (SQLException | UserNotFoundException e) {
 			e.printStackTrace();
 		} finally {
 			releaseResources(connection, prepStatement, resultSet);
@@ -165,7 +184,7 @@ public class DatabaseConnectionService {
 		List<UserRecord> resultList = new ArrayList<>();
 		try {
 			while (resultSet.next()) {
-				UserRecord user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"), resultSet.getString("password"));
+				UserRecord user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
 				resultList.add(user);
 			}
 		} catch (SQLException e) {
