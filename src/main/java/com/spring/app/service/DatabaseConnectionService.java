@@ -38,24 +38,26 @@ public class DatabaseConnectionService {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
 		String newHashedPassword = "";
-		//TODO: What to do if password is updated?
+		byte[] newSalt = null;
+		
 		if(newPassword != null) {
-			byte[] newSalt = PasswordHashingService.generateSalt();		
+			newSalt = PasswordHashingService.generateSalt();		
 			newHashedPassword = PasswordHashingService.hashPassword(newPassword, newSalt);
-			//TODO: But what happens to salt???
 		}
 		try {
 			connection = connectToDB();
 			//Prepared statements prevents sql injections
-			//TODO: But what happens to salt???
 			prepStatement = connection.prepareStatement("UPDATE USERS "
 					+ "SET username = COALESCE(?, username), "
-					+ "passwordHash = COALESCE(?, passwordHash) "
+					+ "passwordHash = COALESCE(?, passwordHash), "
+					+ "passwordSalt = COALESCE(?, passwordSalt) "
 					+ "WHERE idusers = ?");
+			
 			//SetString parameterIndex starts at 1 not 0
 			prepStatement.setString(1, newUsername);
 			prepStatement.setString(2, newHashedPassword);
-			prepStatement.setInt(3, id);
+			prepStatement.setBytes(3, newSalt);
+			prepStatement.setInt(4, id);
 			prepStatement.executeUpdate();
 			
 			return "User updated";
@@ -69,7 +71,6 @@ public class DatabaseConnectionService {
 		return null;
 	}
 	
-	//TODO: DB has been updated -> Test it with the new Hashing service
 	public static String insertNewUser(String username, String password) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
