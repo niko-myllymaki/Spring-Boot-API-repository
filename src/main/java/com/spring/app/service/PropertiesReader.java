@@ -4,8 +4,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-class PropertiesReader {
-	static Properties readProperties() {
+public class PropertiesReader {
+	public static Properties readProperties() {
 		FileReader reader = null;
 		try {
 			reader = new FileReader("src\\main\\resources\\config.properties");

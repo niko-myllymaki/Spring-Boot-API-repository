@@ -1,6 +1,6 @@
-package com.spring.app.service;
+package com.spring.app.exception;
 
-public class UserNotFoundException extends Exception {
+public class UserNotFoundException extends RuntimeException {
 	
 	public UserNotFoundException() {}
 	

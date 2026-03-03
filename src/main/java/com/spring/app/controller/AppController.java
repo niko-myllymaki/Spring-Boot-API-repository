@@ -2,6 +2,9 @@ package com.spring.app.controller;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,11 +18,12 @@ import com.spring.app.dto.UserRecord;
 import com.spring.app.service.DatabaseConnectionService;
 import com.spring.app.service.RegexEngineService;
 
-
 @RestController
 @RequestMapping("/api")
 public class AppController {
 	
+	@Autowired
+	private DatabaseConnectionService dbConnectionService;
 	
 	@GetMapping("/regex")
 	public boolean checkPattern(@RequestParam("pattern") String pattern, 
@@ -29,32 +33,39 @@ public class AppController {
 	
 	//TODO: Put a default limit of how many users this returns and possibly additional parameters to select a certain amount of users
 	@GetMapping("/users")
-	public List<UserRecord> getAllUsers(@RequestParam(defaultValue = "testvalue") String value) {
+	public ResponseEntity<?> getAllUsers(@RequestParam(defaultValue = "testvalue") String value) {
 		System.out.println(value);
-		return DatabaseConnectionService.selectAll();
+		List<UserRecord> usersList = dbConnectionService.getAllUsers();
+        return new ResponseEntity<>(usersList, HttpStatus.OK);
 	}
 	
 	@GetMapping("/users/{id}")
-	public UserRecord getUserById(@PathVariable int id) {
-		return DatabaseConnectionService.selectOne(id);
+	public ResponseEntity<?> getUserById(@PathVariable int id) {
+		UserRecord user = dbConnectionService.getUserById(id);
+        return new ResponseEntity<>(user, HttpStatus.OK);
 	}
 	
 	@PostMapping("/users")
-	public String addNewUser(@RequestParam("username") String username,
+	public ResponseEntity<?> addNewUser(@RequestParam("username") String username,
 			@RequestParam("password") String password) {
-		return DatabaseConnectionService.insertNewUser(username, password);
+		
+		String outcome = dbConnectionService.addNewUser(username, password);
+        return new ResponseEntity<>(outcome, HttpStatus.CREATED); 
 	}
 	
 	@PutMapping("/users/{id}")
-	public String updateUser(@PathVariable int id,
+	public ResponseEntity<?> updateUser(@PathVariable int id,
 			@RequestParam(required = false) String username,
 			@RequestParam(required = false) String password) {
-		return DatabaseConnectionService.updateUser(id, username, password);
+		
+		String outcome = dbConnectionService.updateUser(id, username, password);
+        return new ResponseEntity<>(outcome, HttpStatus.CREATED); 
 	}
 	
 	@DeleteMapping("/users/{id}")
-	public String deleteUser(@PathVariable int id) {
-		return DatabaseConnectionService.deleteUser(id);
+	public ResponseEntity<?> deleteUser(@PathVariable int id) {
+		String outcome = dbConnectionService.deleteUserById(id);
+        return new ResponseEntity<>(outcome, HttpStatus.OK); 
 	}
 
 }

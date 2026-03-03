@@ -1,212 +1,41 @@
 package com.spring.app.service;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.spring.app.dto.UserRecord;
+import com.spring.app.exception.UserNotFoundException;
+import com.spring.app.repository.CustomUserRepositoryImpl;
 
 @Service
 public class DatabaseConnectionService {
 	
-	//Constants are read from a config.properties file
-	private static final String DATABASE_URL = PropertiesReader.readProperties().getProperty("jdbc-url");
-	private static final String DATABASE_USER = PropertiesReader.readProperties().getProperty("db-username");
-	private static final String USER_PASSWORD = PropertiesReader.readProperties().getProperty("db-password");
+	@Autowired
+	private CustomUserRepositoryImpl userRepository;
 	
-	private static Connection connectToDB() {
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(DATABASE_URL, DATABASE_USER, USER_PASSWORD);
-			System.out.println("Connected to the database.");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		return connection;
+	//TODO: How to implement finding users by id before executing other methods.
+	public UserRecord getUserById(int id) {
+		return userRepository.findUserById(id).orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
 	}
 	
-	public static String updateUser(int id, String newUsername, String newPassword) {
-		Connection connection = null;
-		PreparedStatement prepStatement = null;
-		String newHashedPassword = "";
-		byte[] newSalt = null;
-		
-		if(newPassword != null) {
-			newSalt = PasswordHashingService.generateSalt();		
-			newHashedPassword = PasswordHashingService.hashPassword(newPassword, newSalt);
-		}
-		try {
-			connection = connectToDB();
-			//Prepared statements prevents sql injections
-			prepStatement = connection.prepareStatement("UPDATE USERS "
-					+ "SET username = COALESCE(?, username), "
-					+ "passwordHash = COALESCE(?, passwordHash), "
-					+ "passwordSalt = COALESCE(?, passwordSalt) "
-					+ "WHERE idusers = ?");
-			
-			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setString(1, newUsername);
-			prepStatement.setString(2, newHashedPassword);
-			prepStatement.setBytes(3, newSalt);
-			prepStatement.setInt(4, id);
-			prepStatement.executeUpdate();
-			
-			return "User updated";
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			releaseResources(connection, prepStatement);
-		}
-		
-		return null;
+	public List<UserRecord> getAllUsers() {
+		return userRepository.selectAllUsers();
+	}
+
+	public String deleteUserById(int id) {
+		//Check if user exists in the first place. If not -> throw userNotFoundException
+		getUserById(id);
+		return userRepository.deleteUser(id);
 	}
 	
-	public static String insertNewUser(String username, String password) {
-		Connection connection = null;
-		PreparedStatement prepStatement = null;
-		
-		byte[] salt = PasswordHashingService.generateSalt();		
-		String hashedPassword = PasswordHashingService.hashPassword(password, salt);
-		
-		try {
-			connection = connectToDB();
-
-			//Prepared statements prevents sql injections
-			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt) VALUES (?, ?, ?)");
-			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setString(1, username);
-			prepStatement.setString(2, hashedPassword);
-			prepStatement.setBytes(3, salt);
-			prepStatement.execute();
-			
-			return "New User added";
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			releaseResources(connection, prepStatement);
-		}
-		return null;
+	public String addNewUser(String username, String password) {
+		return userRepository.addNewUser(username, password);
 	}
 	
-	public static String deleteUser(int id) {
-		Connection connection = null;
-		PreparedStatement prepStatement = null;
-
-		try {
-			connection = connectToDB();
-			//Prepared statements prevents sql injections
-			prepStatement = connection.prepareStatement("DELETE FROM USERS WHERE idusers = ?");
-			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setInt(1, id);
-
-			prepStatement.execute();
-			
-			return "Deleted user of id: " + id;
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			releaseResources(connection, prepStatement);
-		}
-		return null;
+	public String updateUser(int id, String username, String password) {
+		getUserById(id);
+		return userRepository.updateUser(id, username, password);
 	}
 	
-	public static UserRecord selectOne(int id) {
-		Connection connection = null;
-		PreparedStatement prepStatement = null;
-		ResultSet resultSet = null;
-		try {
-			UserRecord user = null;
-			connection = connectToDB();
-			
-			//Prepared statements prevent sql injections
-			prepStatement = connection.prepareStatement("SELECT idusers, username FROM USERS WHERE idusers = ?");
-			
-			//Set parameterIndex starts at 1 not 0
-			prepStatement.setInt(1, id);
-			
-			//Use execute with unknown statements or when statements produce multiple results
-			//otherwise use executeQuery
-			resultSet = prepStatement.executeQuery();
-			
-			//TODO: Custom Error Messages and handle exception in REST API
-			if(!resultSet.isBeforeFirst()) {
-				throw new UserNotFoundException("User not found.", new RuntimeException());
-			}
-			while(resultSet.next()) {
-				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
-			}
-			System.out.println("User selected: " + user);
-
-			return user;
-		} catch (SQLException | UserNotFoundException e) {
-			e.printStackTrace();
-		} finally {
-			releaseResources(connection, prepStatement, resultSet);
-		}
-		return null;
-	}
-	
-	
-	public static List<UserRecord> selectAll() {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		
-		try {
-			connection = connectToDB();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT * FROM USERS");
-
-			List<UserRecord> allUsers = resultSetToList(resultSet);
-			System.out.println("Selecting all users");
-
-			return allUsers;
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			releaseResources(connection, statement, resultSet);
-		}
-		return null;
-	}
-	
-	//Record class is used as an Data Transfer Object (DTO) because we just need an User class to hold and carry data.
-	private static List<UserRecord> resultSetToList(ResultSet resultSet) {
-		List<UserRecord> resultList = new ArrayList<>();
-		try {
-			while (resultSet.next()) {
-				UserRecord user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
-				resultList.add(user);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return resultList;
-	}
-	
-	//Handling closing of different types of objects
-	private static void releaseResources(Object... args) {
-		System.out.println("Releasing resources...");
-		for(Object obj: args) {
-			if(obj instanceof Connection) {
-				try { ((Connection)obj).close();} catch (Exception e) {}
-			} 
-			if(obj instanceof Statement) {
-				try { ((Statement)obj).close();} catch (Exception e) {}
-			} 
-			if(obj instanceof ResultSet) {
-				try { ((ResultSet)obj).close();} catch (Exception e) {}
-			} 
-		}
-	}	
 }
