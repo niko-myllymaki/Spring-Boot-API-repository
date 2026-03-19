@@ -13,11 +13,12 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 import com.spring.app.dto.UserRecord;
+import com.spring.app.entity.UserInfo;
 import com.spring.app.service.PasswordHashingService;
 import com.spring.app.service.PropertiesReader;
 
 @Repository
-public class CustomUserRepositoryImpl implements CustomUserRepository{
+public class CustomUserRepositoryImpl implements CustomUserRepository {
 
 	//Constants are read from a config.properties file
 	private static final String DATABASE_URL = PropertiesReader.readProperties().getProperty("jdbc-url");
@@ -46,7 +47,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 			connection = connectToDB();
 			
 			//Prepared statements prevent sql injections
-			prepStatement = connection.prepareStatement("SELECT idusers, username FROM USERS WHERE idusers = ?");
+			prepStatement = connection.prepareStatement("SELECT idusers, username, role FROM USERS WHERE idusers = ?");
 			
 			//Set parameterIndex starts at 1 not 0
 			prepStatement.setInt(1, id);
@@ -56,7 +57,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 			resultSet = prepStatement.executeQuery();
 			
 			while(resultSet.next()) {
-				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
+				user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"), resultSet.getString("role"));
 			}
 
 			return Optional.ofNullable(user);
@@ -97,9 +98,6 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 		PreparedStatement prepStatement = null;
 
 		try {
-			//First check if user with ID exists
-			//getUserById(id);
-			
 			connection = connectToDB();
 			//Prepared statements prevents sql injections
 			prepStatement = connection.prepareStatement("DELETE FROM USERS WHERE idusers = ?");
@@ -119,25 +117,26 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 	}
 	
 	@Override
-	public String addNewUser(String username, String password) {
+	public String addNewUser(UserInfo userInfo) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
 		
 		byte[] salt = PasswordHashingService.generateSalt();		
-		String hashedPassword = PasswordHashingService.hashPassword(password, salt);
+		String hashedPassword = PasswordHashingService.hashPassword(userInfo.getPassword(), salt);
 		
 		try {
 			connection = connectToDB();
 
 			//Prepared statements prevents sql injections
-			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt) VALUES (?, ?, ?)");
+			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt, role) VALUES (?, ?, ?, ?)");
 			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setString(1, username);
+			prepStatement.setString(1, userInfo.getUsername());
 			prepStatement.setString(2, hashedPassword);
 			prepStatement.setBytes(3, salt);
+			prepStatement.setString(4, userInfo.getRole());
 			prepStatement.execute();
 			
-			return "New user added: " + username;
+			return "New User Added Successfully: " + userInfo.getUsername();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -146,11 +145,39 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 		return null;
 	}
 	
+//	@Override
+//	public String addNewUser(String username, String password) {
+//		Connection connection = null;
+//		PreparedStatement prepStatement = null;
+//		
+//		byte[] salt = PasswordHashingService.generateSalt();		
+//		String hashedPassword = PasswordHashingService.hashPassword(password, salt);
+//		
+//		try {
+//			connection = connectToDB();
+//
+//			//Prepared statements prevents sql injections
+//			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt) VALUES (?, ?, ?)");
+//			//SetString parameterIndex starts at 1 not 0
+//			prepStatement.setString(1, username);
+//			prepStatement.setString(2, hashedPassword);
+//			prepStatement.setBytes(3, salt);
+//			prepStatement.execute();
+//			
+//			return "New user added: " + username;
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		} finally {
+//			releaseResources(connection, prepStatement);
+//		}
+//		return null;
+//	}
+	
 	@Override
 	public String updateUser(int id, String newUsername, String newPassword) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
-		String newHashedPassword = "";
+		String newHashedPassword = null;
 		byte[] newSalt = null;
 		
 		if(newPassword != null) {
@@ -158,9 +185,6 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 			newHashedPassword = PasswordHashingService.hashPassword(newPassword, newSalt);
 		}
 		try {
-			//First check if user with ID exists
-			//getUserById(id);
-			
 			connection = connectToDB();
 			//Prepared statements prevents sql injections
 			prepStatement = connection.prepareStatement("UPDATE USERS "
@@ -186,12 +210,44 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 		return null;
 	}
 	
+	@Override
+	public Optional<UserInfo> findByUsername(String username) {
+		Connection connection = null;
+		PreparedStatement prepStatement = null;
+		ResultSet resultSet = null;
+		try {
+			UserInfo user = null;
+			connection = connectToDB();
+			
+			//Prepared statements prevent sql injections
+			prepStatement = connection.prepareStatement("SELECT username, role FROM USERS WHERE username = ?");
+			
+			//Set parameterIndex starts at 1 not 0
+			prepStatement.setString(1, username);
+			
+			//Use execute with unknown statements or when statements produce multiple results
+			//otherwise use executeQuery
+			resultSet = prepStatement.executeQuery();
+			
+			while(resultSet.next()) {
+				user = new UserInfo(resultSet.getString("username"), resultSet.getString("role"), resultSet.getString("role"));
+			}
+
+			return Optional.ofNullable(user);
+			} catch (SQLException e) {
+				e.printStackTrace();
+		} finally {
+			releaseResources(connection, prepStatement, resultSet);
+		}
+		return null;
+	}
+	
 	//Record class is used as an Data Transfer Object (DTO) because we just need an User class to hold and carry data.
 	private static List<UserRecord> resultSetToList(ResultSet resultSet) {
 		List<UserRecord> resultList = new ArrayList<>();
 		try {
 			while (resultSet.next()) {
-				UserRecord user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"));
+				UserRecord user = new UserRecord(resultSet.getInt("idusers"), resultSet.getString("username"), resultSet.getString("role"));
 				resultList.add(user);
 			}
 		} catch (SQLException e) {
@@ -215,6 +271,8 @@ public class CustomUserRepositoryImpl implements CustomUserRepository{
 			} 
 		}
 	}
+
+
 
 
 

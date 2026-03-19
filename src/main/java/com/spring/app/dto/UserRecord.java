@@ -1,5 +1,5 @@
 package com.spring.app.dto;
 
-public record UserRecord(int userId, String username) {
+public record UserRecord (int userId, String username, String role) {
 	
 }
