@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.spring.app.dto.UserRecord;
-import com.spring.app.entity.UserInfo;
+import com.spring.app.entity.User;
 import com.spring.app.exception.UserNotFoundException;
 import com.spring.app.repository.CustomUserRepositoryImpl;
 
@@ -29,8 +29,8 @@ public class DatabaseConnectionService {
 		return userRepository.deleteUser(id);
 	}
 	
-	public String addNewUser(UserInfo userInfo) {
-		return userRepository.addNewUser(userInfo);
+	public String addNewUser(User user) {
+		return userRepository.addNewUser(user);
 	}
 	
 //	public String addNewUser(String username, String password) {

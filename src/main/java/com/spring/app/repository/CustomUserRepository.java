@@ -4,14 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 import com.spring.app.dto.UserRecord;
-import com.spring.app.entity.UserInfo;
+import com.spring.app.entity.User;
 
 public interface CustomUserRepository {
 	Optional<UserRecord> findUserById(int id);
 	List<UserRecord> selectAllUsers();
 	String deleteUser(int id);
-	String addNewUser(UserInfo userInfo);
+	String addNewUser(User user);
 	String updateUser(int id, String newUsername, String newPassword);
-    Optional<UserInfo> findByUsername(String username);
+    User findByUsername(String username);
 
 }

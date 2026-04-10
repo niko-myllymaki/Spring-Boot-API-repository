@@ -13,7 +13,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 import com.spring.app.dto.UserRecord;
-import com.spring.app.entity.UserInfo;
+import com.spring.app.entity.User;
 import com.spring.app.service.PasswordHashingService;
 import com.spring.app.service.PropertiesReader;
 
@@ -117,12 +117,12 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
 	}
 	
 	@Override
-	public String addNewUser(UserInfo userInfo) {
+	public String addNewUser(User user) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
 		
 		byte[] salt = PasswordHashingService.generateSalt();		
-		String hashedPassword = PasswordHashingService.hashPassword(userInfo.getPassword(), salt);
+		String hashedPassword = PasswordHashingService.hashPassword(user.getPassword(), salt);
 		
 		try {
 			connection = connectToDB();
@@ -130,13 +130,13 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
 			//Prepared statements prevents sql injections
 			prepStatement = connection.prepareStatement("INSERT INTO USERS (username, passwordHash, passwordSalt, role) VALUES (?, ?, ?, ?)");
 			//SetString parameterIndex starts at 1 not 0
-			prepStatement.setString(1, userInfo.getUsername());
+			prepStatement.setString(1, user.getUsername());
 			prepStatement.setString(2, hashedPassword);
 			prepStatement.setBytes(3, salt);
-			prepStatement.setString(4, userInfo.getRole());
+//			prepStatement.setString(4, user.getRole());
 			prepStatement.execute();
 			
-			return "New User Added Successfully: " + userInfo.getUsername();
+			return "New User Added Successfully: " + user.getUsername();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -211,16 +211,16 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
 	}
 	
 	@Override
-	public Optional<UserInfo> findByUsername(String username) {
+	public User findByUsername(String username) {
 		Connection connection = null;
 		PreparedStatement prepStatement = null;
 		ResultSet resultSet = null;
 		try {
-			UserInfo user = null;
+			User user = null;
 			connection = connectToDB();
 			
 			//Prepared statements prevent sql injections
-			prepStatement = connection.prepareStatement("SELECT username, role FROM USERS WHERE username = ?");
+			prepStatement = connection.prepareStatement("SELECT username, passwordHash, role FROM USERS WHERE username = ?");
 			
 			//Set parameterIndex starts at 1 not 0
 			prepStatement.setString(1, username);
@@ -230,10 +230,10 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
 			resultSet = prepStatement.executeQuery();
 			
 			while(resultSet.next()) {
-				user = new UserInfo(resultSet.getString("username"), resultSet.getString("role"), resultSet.getString("role"));
+//				user = new User(resultSet.getString("username"), resultSet.getString("passwordHash"), resultSet.getString("passwordHash"));
 			}
 
-			return Optional.ofNullable(user);
+			return user;
 			} catch (SQLException e) {
 				e.printStackTrace();
 		} finally {

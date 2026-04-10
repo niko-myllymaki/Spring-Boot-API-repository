@@ -5,10 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,10 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.app.dto.UserRecord;
-import com.spring.app.entity.AuthRequest;
-import com.spring.app.entity.UserInfo;
+import com.spring.app.entity.User;
 import com.spring.app.service.DatabaseConnectionService;
-import com.spring.app.service.JwtService;
 import com.spring.app.service.RegexEngineService;
 
 @RestController
@@ -32,10 +26,7 @@ public class AppController {
 	
 	@Autowired
 	private DatabaseConnectionService dbConnectionService;
-	
-    private AuthenticationManager authenticationManager;
-    private JwtService jwtService;
-	
+		
 	@GetMapping("/regex")
 	public boolean checkPattern(@RequestParam("pattern") String pattern, 
 								@RequestParam("text") String text) {
@@ -57,9 +48,9 @@ public class AppController {
 	}
 	
 	@PostMapping("/users")
-	public ResponseEntity<?> addNewUser(@RequestBody UserInfo userInfo) {
+	public ResponseEntity<?> addNewUser(@RequestBody User user) {
 		
-		String outcome = dbConnectionService.addNewUser(userInfo);
+		String outcome = dbConnectionService.addNewUser(user);
         return new ResponseEntity<>(outcome, HttpStatus.CREATED); 
 	}
 	
@@ -87,15 +78,18 @@ public class AppController {
 	}
 	
 	//TODO: This doesn't work "authenticationManager is null"?. Probably has something to do with password???
-	@PostMapping("/generateToken")
-	public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
-		Authentication authentication = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
-		if (authentication.isAuthenticated()) {
-			return jwtService.generateToken(authRequest.getUsername());
-	    } else {
-	    	throw new UsernameNotFoundException("Invalid user request!");
-	    }
-	 }
+	//Still doesn't work. Unsure what is wrong. Maybe it is because I don't use the passwordEnconder in the tutorial.
+	//Maybe try to recreate the JWT tutorial in a different project and see if the problem is fixed. Could be because of using different version of smth?
+	//For example: In SecurityConfig //provider.setUserDetailsService(UserDetailsService()); isn't even found anymore.
+//	@PostMapping("/generateToken")
+//	public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
+//		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
+//		System.out.println("Are we here?");
+//		if (authentication.isAuthenticated()) {
+//			return jwtService.generateToken(authRequest.getUsername());
+//	    } else {
+//	    	throw new UsernameNotFoundException("Invalid user request!");
+//	    }
+//	 }
 
 }

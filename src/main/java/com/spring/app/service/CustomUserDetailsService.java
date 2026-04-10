@@ -1,0 +1,39 @@
+package com.spring.app.service;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.*;
+import org.springframework.stereotype.Service;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import com.spring.app.entity.User;
+import com.spring.app.repository.UserRepository;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    @Autowired
+    private UserRepository userRepository;
+	
+    public UserDetailsImpl loadUserByUsername(String username) throws UsernameNotFoundException {
+        User userFromDB = userRepository.findByUsername(username);
+        if (userFromDB == null) {
+            throw new UsernameNotFoundException("User Not Found with username: " + username);
+        }
+        
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        for (String role : userFromDB.getRoles()) {
+        	authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+        }
+        
+        UserDetailsImpl customUserDetail = new UserDetailsImpl();
+        customUserDetail.setUser(userFromDB);
+        customUserDetail.setAuthorities(authorities);
+        
+        return customUserDetail;
+    }
+   
+}

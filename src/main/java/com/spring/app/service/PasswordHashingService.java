@@ -8,6 +8,8 @@ import java.security.SecureRandom;
 
 public class PasswordHashingService {
 	
+	public PasswordHashingService() {};
+	
 	public static String hashPassword(String password, byte[] salt) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-512");
