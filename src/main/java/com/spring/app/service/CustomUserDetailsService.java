@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import com.spring.app.entity.Permission;
+import com.spring.app.entity.Role;
 import com.spring.app.entity.User;
 import com.spring.app.repository.UserRepository;
 
@@ -25,9 +27,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
         
         Set<GrantedAuthority> authorities = new HashSet<>();
-        for (String role : userFromDB.getRoles()) {
-        	authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+        for (Role role : userFromDB.getRoles()) {
+        	authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
         }
+        
+        for (Permission permission : userFromDB.getPermissions()) {
+        	authorities.add(new SimpleGrantedAuthority(permission.getName()));
+        }
+        
         
         UserDetailsImpl customUserDetail = new UserDetailsImpl();
         customUserDetail.setUser(userFromDB);

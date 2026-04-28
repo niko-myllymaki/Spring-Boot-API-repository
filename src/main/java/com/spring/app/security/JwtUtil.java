@@ -1,7 +1,6 @@
 package com.spring.app.security;
 
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +18,6 @@ import com.spring.app.entity.Permission;
 import com.spring.app.service.UserDetailsImpl;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 
@@ -43,16 +41,21 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
 
         //Extract role
-        List<String> roles = userDetails.getUser().getRoles().stream().collect(Collectors.toList());
+//        List<String> roles = userDetails.getUser().getRoles().stream().collect(Collectors.toList());
+//        claims.put("roles", roles);
+        
+        // Extract roles
+        List<String> roles = userDetails.getUser().getRoles().stream()
+                .map(role -> role.getName().name()) // Assuming Enum ERole
+                .collect(Collectors.toList());
         claims.put("roles", roles);
 
         // Extract permissions
-//        Set<String> permissions = userDetails.getUser().getRoles().stream()
-//                .flatMap(role -> role.getPermissions().stream())
-//                .map(Permission::getName)
-//                .collect(Collectors.toSet());
-//        claims.put("permissions", permissions);
-
+        Set<String> permissions = userDetails.getUser().getPermissions().stream()
+                .map(Permission::getName)
+                .collect(Collectors.toSet());
+        claims.put("permissions", permissions);
+        
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -75,6 +78,12 @@ public class JwtUtil {
     public List<String> getRoleFromToken(String token) {
     	List<String> claimRoles = extractAllClaims(token).get("roles", List.class);
         return claimRoles;
+    } 
+    
+    // Get role from JWT token to List
+    public List<String> getPermissionFromToken(String token) {
+    	List<String> claimPermissions = extractAllClaims(token).get("permissions", List.class);
+        return claimPermissions;
     } 
     
     

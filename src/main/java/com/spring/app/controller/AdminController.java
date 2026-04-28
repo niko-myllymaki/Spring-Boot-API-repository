@@ -3,6 +3,8 @@ package com.spring.app.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,10 +24,11 @@ public class AdminController {
 	JwtUtil jwtUtils;
 	
     @GetMapping("/test")
-    public String sayHello(@RequestHeader(value="Authorization") String authValue) {
+    public ResponseEntity<?> sayHello(@RequestHeader(value="Authorization") String authValue) {
     	//Getting username and role from token and token from header
     	String token = authValue;
     	List<String> roles = jwtUtils.getRoleFromToken(token.substring(6).trim());
-        return "Hello Admin " + jwtUtils.getUsernameFromToken(token.substring(6).trim()) + " " +roles.toString();	
+        String adminResponse = "Hello Admin " + jwtUtils.getUsernameFromToken(token.substring(6).trim()) + " " + roles.toString();	
+    	return new ResponseEntity<>(adminResponse, HttpStatus.OK);
     }
 }

@@ -1,18 +1,13 @@
 package com.spring.app.service;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+
 import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.spring.app.entity.ERole;
-import com.spring.app.entity.Permission;
-import com.spring.app.entity.Role;
 import com.spring.app.entity.User;
 
 public class UserDetailsImpl implements UserDetails {

@@ -61,7 +61,7 @@ public class WebSecurityConfigNew {
                                 //The uri path must be very specific for some reason, otherwise it will not work. /api/role/admin/** doesn't work either.
                                 .requestMatchers("/api/role/user/test").hasRole("USER")
                                 .requestMatchers("/api/role/admin/test").hasRole("ADMIN")
-                                //.requestMatchers("/api/auth/users").hasAuthority("READ_USER")
+                                .requestMatchers("/api/test/users").hasAuthority("READ_USER")
                                 .anyRequest().authenticated()
                 );
         // Add the JWT Token filter before the UsernamePasswordAuthenticationFilter

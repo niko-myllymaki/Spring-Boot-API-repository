@@ -2,7 +2,6 @@ package com.spring.app.entity;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -25,15 +24,27 @@ public class User {
 	private String username;
 	private String password;
 	
-    private Set<String> roles = new HashSet<>();
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
+	
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "user_permissions",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id"))
+    private Set<Permission> permissions = new HashSet<>();
 	
 	public User() {}
 	
-	public User(Long id, String username, String password, Set<String> roles) {
+	public User(Long id, String username, String password, Set<Role> roles, Set<Permission> permissions ) {
 		this.id = id;
 		this.username = username;
 		this.password = password;
 		this.roles = roles;
+		this.permissions = permissions;
 	}
 	
 	public Long getId() {
@@ -60,15 +71,19 @@ public class User {
 		this.password = password;
 	}
 
-	public Set<String> getRoles() {
+	public Set<Role> getRoles() {
 		return roles;
 	}
 
-	public void setRoles(Set<String> roles) {
+	public void setRoles(Set<Role> roles) {
 		this.roles = roles;
 	}
-
-
 	
+	public Set<Permission> getPermissions() {
+		return permissions;
+	}
 
+	public void setPermissions(Set<Permission> permissions) {
+		this.permissions = permissions;
+	}
 }
