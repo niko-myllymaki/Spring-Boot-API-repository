@@ -39,10 +39,6 @@ public class JwtUtil {
     // Generate JWT token
     public String generateToken(UserDetailsImpl userDetails) {
         Map<String, Object> claims = new HashMap<>();
-
-        //Extract role
-//        List<String> roles = userDetails.getUser().getRoles().stream().collect(Collectors.toList());
-//        claims.put("roles", roles);
         
         // Extract roles
         List<String> roles = userDetails.getUser().getRoles().stream()
@@ -85,7 +81,6 @@ public class JwtUtil {
     	List<String> claimPermissions = extractAllClaims(token).get("permissions", List.class);
         return claimPermissions;
     } 
-    
     
     // Validate JWT token
     public boolean validateJwtToken(String token) {

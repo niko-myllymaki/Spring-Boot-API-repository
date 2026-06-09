@@ -4,10 +4,13 @@ import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.spring.app.exception.RefreshTokenException;
 import com.spring.app.exception.ResourceNotFoundException;
+import com.spring.app.exception.UserAlreadyExistsException;
 import com.spring.app.exception.UserNotFoundException;
 import com.spring.app.model.ErrorResponse;
 
@@ -36,6 +39,42 @@ public class GlobalExceptionHandler {
 				);
 		
 		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(UserAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException exception) {
+		ErrorResponse errorResponse = new ErrorResponse(
+				409,
+				exception.getMessage(),
+				"User already exists.",
+				LocalDateTime.now()
+				);
+		
+		return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+	}
+	
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException exception) {
+		ErrorResponse errorResponse = new ErrorResponse(
+				500,
+				exception.getMessage(),
+				"Username or password do not match.",
+				LocalDateTime.now()
+				);
+		
+		return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
+	@ExceptionHandler(RefreshTokenException.class)
+	public ResponseEntity<ErrorResponse> handleRefreshTokenException(RefreshTokenException exception) {
+		ErrorResponse errorResponse = new ErrorResponse(
+				400,
+				exception.getMessage(),
+				"Error with refresh token.",
+				LocalDateTime.now()
+				);
+		
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
 	
 	@ExceptionHandler(Exception.class)
