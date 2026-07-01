@@ -9,3 +9,5 @@ Currently working on:
   
 Entity Relationship Diagram of JWT Authentication.
 <img width="508" height="374" alt="image" src="https://github.com/user-attachments/assets/112293c7-4121-4503-81af-200b50116b97" />
+
+Frontend project link: https://github.com/niko-myllymaki/Angular-API-Frontend-Repository
