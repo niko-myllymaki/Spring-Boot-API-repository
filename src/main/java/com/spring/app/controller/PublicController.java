@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.spring.app.security.JwtUtil;
+import com.spring.app.service.RefreshTokenService;
 import com.spring.app.service.UserService;
 
 /*
@@ -24,12 +25,19 @@ public class PublicController {
 	@Autowired
 	UserService userService;
 	
+	@Autowired
+	RefreshTokenService refreshTokenService;
+	
 	//This specifies if its okay to allow api calls from this source. This can be done globally as well.
 	//@CrossOrigin(origins = "http://localhost:4200")
     @GetMapping("/all")
     public ResponseEntity<?> allAccess() {
     	return new ResponseEntity<>("Public access...", HttpStatus.OK);
-		//return "Public access...";
+    }
+    
+    @GetMapping("/all/refresh-token")
+    public ResponseEntity<?> refreshTokenByUserId(@RequestParam() Long userId) {
+    	return refreshTokenService.getRefreshTokenByUserId(userId);
     }
     
     @GetMapping("/user")

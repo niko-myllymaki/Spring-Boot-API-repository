@@ -26,14 +26,10 @@ public class RoleMapper {
 		return role;
 	}
 	
-	//TODO: Test this out?
 	public Set<Role> toSetEntity(Set<RoleDTO> rolesDto) {
 		Set<Role> roles = rolesDto.stream().map(this::toEntity)
 				.collect(Collectors.toSet());
 		return roles;
 	}
 	
-//	Set<Role> roles = rolesDto.stream().map(role -> new Role(null, role.getRoleName()))
-//			.collect(Collectors.toSet());
-
 }

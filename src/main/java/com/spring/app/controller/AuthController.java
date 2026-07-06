@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.app.entity.User;
@@ -74,6 +75,11 @@ public class AuthController {
 	 @GetMapping("/role")
 	 public ResponseEntity<?> getRoleFromJwt(@RequestHeader(value="Authorization") String authToken) {
 		 return new ResponseEntity<>(userService.getRoleFromJwtToken(authToken), HttpStatus.OK);
+	 }
+	 
+	 @GetMapping("/user")
+	 public ResponseEntity<?> getIdFromUsername(@RequestParam() String username) {
+		 return new ResponseEntity<>(userService.findUserByUsername(username), HttpStatus.OK);
 	 }
 	 
 	

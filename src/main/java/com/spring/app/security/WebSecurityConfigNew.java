@@ -59,7 +59,7 @@ public class WebSecurityConfigNew {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                         		//If we don't specify an uri path here, then it needs authorization with a token, otherwise it's open to all.
-                                .requestMatchers("/api/auth/**", "/api/test/all").permitAll() // Use 'requestMatchers' instead of 'antMatchers'
+                                .requestMatchers("/api/auth/**", "/api/test/all/**").permitAll() // Use 'requestMatchers' instead of 'antMatchers'
                                 //The uri path must be very specific for some reason, otherwise it will not work. /api/role/admin/** doesn't work either.
                                 .requestMatchers("/api/role/user/test").hasRole("USER")
                                 .requestMatchers("/api/role/admin/test").hasRole("ADMIN")

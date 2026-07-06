@@ -47,9 +47,11 @@ public class JwtUtil {
         claims.put("roles", roles);
 
         // Extract permissions
-        Set<String> permissions = userDetails.getUser().getPermissions().stream()
+        Set<String> permissions = userDetails.getUser().getRoles().stream()
+        		.flatMap(role -> role.getPermissions().stream())
                 .map(Permission::getName)
                 .collect(Collectors.toSet());
+        System.out.println(permissions.toString());
         claims.put("permissions", permissions);
         
         return Jwts.builder()
@@ -76,7 +78,7 @@ public class JwtUtil {
         return claimRoles;
     } 
     
-    // Get role from JWT token to List
+    // Get permissions from JWT token to List
     public List<String> getPermissionFromToken(String token) {
     	List<String> claimPermissions = extractAllClaims(token).get("permissions", List.class);
         return claimPermissions;

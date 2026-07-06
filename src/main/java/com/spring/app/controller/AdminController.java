@@ -28,7 +28,8 @@ public class AdminController {
     	//Getting username and role from token and token from header
     	String token = authValue;
     	List<String> roles = jwtUtils.getRoleFromToken(token.substring(6).trim());
-        String adminResponse = "Hello Admin " + jwtUtils.getUsernameFromToken(token.substring(6).trim()) + " " + roles.toString();	
+    	List<String> permissions = jwtUtils.getPermissionFromToken(token.substring(6).trim());
+        String adminResponse = "Hello Admin " + jwtUtils.getUsernameFromToken(token.substring(6).trim()) + " " + roles.toString() + " " + permissions.toString();	
     	return new ResponseEntity<>(adminResponse, HttpStatus.OK);
     }
 }

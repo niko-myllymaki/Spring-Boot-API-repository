@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,12 +18,12 @@ import org.springframework.stereotype.Service;
 
 import com.spring.app.dto.UserDTO;
 import com.spring.app.entity.ERole;
-import com.spring.app.entity.Permission;
 import com.spring.app.entity.RefreshToken;
 import com.spring.app.entity.Role;
 import com.spring.app.entity.User;
 import com.spring.app.exception.RefreshTokenException;
 import com.spring.app.exception.UserAlreadyExistsException;
+import com.spring.app.exception.UserNotFoundException;
 import com.spring.app.mapper.UserMapper;
 import com.spring.app.repository.PermissionRepository;
 import com.spring.app.repository.RefreshTokenRepository;
@@ -68,7 +67,6 @@ public class UserService {
 			 throw new UserAlreadyExistsException("Username " + user.getUsername() + " already exists");
 		 }
 		 
-		 Set<Permission> permissionsSet = new HashSet<>();
 		 Set<Role> roleSet = new HashSet<>();
 		 
 		 User newUser = new User(
@@ -76,8 +74,7 @@ public class UserService {
 				 user.getUsername(),
 				 //TODO: Can we use our custom encoder instead of what is provided?
 				 encoder.encode(user.getPassword()),
-				 roleSet,
-				 permissionsSet
+				 roleSet
 				 );
 		 
 		 for(Role role : user.getRoles()) {
@@ -86,12 +83,6 @@ public class UserService {
 					 .orElseGet(() -> new Role(null, roleName)));
 		 }
 		 
-		for(Permission permission : user.getPermissions()) {
-			 String permissionString = permission.getName();
-			 newUser.getPermissions().add(permissionRepository.findByName(permissionString)
-					 .orElseGet(() -> new Permission(null, permissionString)));
-		}
-		
 		return userRepository.save(newUser);
     }
     
@@ -149,8 +140,12 @@ public class UserService {
 				 .orElseThrow(() -> new RefreshTokenException("Invalid refresh token."));
     }
     
-    public User findUserByUsername(String username) {
-    	return userRepository.findByUsername(username);
+    public Long findUserByUsername(String username) {
+    	if (!userRepository.existsByUsername(username)) {
+    		throw new UserNotFoundException("Username: " + username + " was not found."); 
+    	}
+    	
+    	return userRepository.findByUsername(username).getId();
     }
     
     public List<String> getRoleFromJwtToken(String authToken) {

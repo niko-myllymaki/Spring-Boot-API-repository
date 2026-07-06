@@ -4,10 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.*;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
 import com.spring.app.entity.Permission;
 import com.spring.app.entity.Role;
@@ -28,14 +29,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         
         Set<GrantedAuthority> authorities = new HashSet<>();
         for (Role role : userFromDB.getRoles()) {
+        	System.out.println("here: " + role.getName());
         	authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+            for (Permission permission : role.getPermissions()) {
+            	authorities.add(new SimpleGrantedAuthority(permission.getName()));
+            }
+            
         }
-        
-        for (Permission permission : userFromDB.getPermissions()) {
-        	authorities.add(new SimpleGrantedAuthority(permission.getName()));
-        }
-        
-        
+           
         UserDetailsImpl customUserDetail = new UserDetailsImpl();
         customUserDetail.setUser(userFromDB);
         customUserDetail.setAuthorities(authorities);
